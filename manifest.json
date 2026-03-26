@@ -1,0 +1,15 @@
+{
+  "name": "大忘日记",
+  "short_name": "大忘日记",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8f8f8",
+  "theme_color": "#f8f8f8",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/4344/4344843.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
