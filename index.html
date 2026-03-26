@@ -26,7 +26,6 @@
         .mood-active { filter: grayscale(0); opacity: 1; transform: scale(1.2); }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .side-thumb { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; flex-shrink: 0; margin-left: 12px; border: 1px solid #f1f1f1; }
-        /* 隐私输入框专用样式 */
         .secure-input { width: 100%; border: 1px solid #eee; border-radius: 14px; padding: 10px 15px; font-size: 13px; font-family: monospace; outline: none; transition: 0.2s; }
         .secure-input:focus { border-color: #000; box-shadow: 0 0 0 2px rgba(0,0,0,0.05); }
     </style>
@@ -35,7 +34,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('PWA 运行中: 安全私密模式');
+                    console.log('PWA PRO 运行中');
                 }).catch(err => console.log('PWA 注册失败', err));
             });
         }
@@ -130,13 +129,13 @@
                 
                 <div class="bg-white rounded-[28px] p-6 shadow-sm border border-gray-50 mb-6 relative">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-black text-gray-900">云同步设置</h3>
+                        <h3 class="text-sm font-black text-gray-900">私人代理配置</h3>
                         <button v-if="hasCloudConfigChanged" @click="saveCloudConfig" class="text-[10px] font-bold bg-black text-white px-4 py-1.5 rounded-full active:scale-95">保存配置</button>
                     </div>
                     <div class="space-y-3">
                         <input type="text" v-model="cloudUser" class="secure-input" placeholder="坚果云注册邮箱">
-                        <input type="password" v-model="cloudPass" class="secure-input" placeholder="16位应用授权码 (非登录密码)">
-                        <p class="text-[9px] text-gray-300 pt-1 leading-relaxed">🔒 您的账号密码仅存放在此手机本地，通过加密传输至坚果云，代码本身不包含任何隐私。妥善保管授权码以确保持续同步。</p>
+                        <input type="password" v-model="cloudPass" class="secure-input" placeholder="16位授权码 (非登录密码)">
+                        <p class="text-[9px] text-gray-300 pt-1 leading-relaxed text-center">同步使用专属私人代理，更稳更快</p>
                     </div>
                 </div>
 
@@ -192,47 +191,40 @@
                 const historyDate = ref(new Date().toISOString().split('T')[0]);
                 const calYear = ref(2026), calMonth = ref(new Date().getMonth()), selectedDate = ref(new Date().getDate());
                 
-                // 新增：云同步配置响应式变量
                 const cloudUser = ref(''), cloudPass = ref('');
                 const savedCloudUser = ref(''), savedCloudPass = ref('');
 
                 const saveToLocal = () => {
                     try { localStorage.setItem('diary_v2026_final', JSON.stringify(diaries.value)); }
-                    catch (e) { alert("⚠️ 存储失败！请尝试清理。"); }
+                    catch (e) { alert("⚠️ 存储失败！"); }
                 };
 
                 onMounted(() => { 
                     const s = localStorage.getItem('diary_v2026_final'); 
-                    if (s) diaries.value = JSON.parse(s).map(d => ({ ...d, isTimelineExpanded: d.isTimelineExpanded || false }));
-                    
-                    // 新增：从手机本地读取云同步凭证
+                    if (s) diaries.value = JSON.parse(s).map(d => ({ ...d, isTimelineExpanded: false }));
                     cloudUser.value = savedCloudUser.value = localStorage.getItem('nut_user_0326') || '';
                     cloudPass.value = savedCloudPass.value = localStorage.getItem('nut_pass_0326') || '';
                 });
 
-                // 新增：保存坚果云配置到本地
                 const saveCloudConfig = () => {
                     if (!cloudUser.value || !cloudPass.value) { alert("❌ 请输入完整的邮箱和授权码"); return; }
                     localStorage.setItem('nut_user_0326', cloudUser.value);
                     localStorage.setItem('nut_pass_0326', cloudPass.value);
                     savedCloudUser.value = cloudUser.value;
                     savedCloudPass.value = cloudPass.value;
-                    alert("✅ 坚果云配置已成功安全存入本地手机");
+                    alert("✅ 凭证已存入本地手机");
                 };
 
                 const handleSync = async (mode) => {
-                    // 安全调整：不再使用硬编码凭证，直接从本地读取最新值
                     const user = localStorage.getItem('nut_user_0326');
                     const pass = localStorage.getItem('nut_pass_0326');
+                    if (!user || !pass) { alert("⚠️ 请先在【Profile】设置坚果云凭证"); currentTab.value = 2; return; }
+
+                    // --- 专属私人代理配置 ---
+                    const proxyBase = 'https://mydiarprcy.evelynchen1124.workers.dev/?url=';
+                    const targetUrl = 'https://dav.jianguoyun.com/dav/diary/dawang_diary_v2026.json';
+                    const fullUrl = proxyBase + encodeURIComponent(targetUrl);
                     
-                    if (!user || !pass) { alert("⚠️ 请先在【Profile】页面设置坚果云账户信息"); currentTab.value = 2; return; }
-
-                    const proxy = 'https://mydiarprcy.evelynchen1124.workers.dev/?url=';
-                    // 如果 Safari 同步失败，可以把上面那行替换为下面任意一行轻量级代理：
-                    // const proxy = 'https://corsproxy.io/?'; 
-                    // const proxy = 'https://api.allorigins.win/raw?url=';
-
-                    const fullUrl = `${proxy}https://dav.jianguoyun.com/dav/diary/dawang_diary_v2026.json`;
                     const auth = btoa(user + ':' + pass);
                     try {
                         const headers = { 'Authorization': 'Basic ' + auth, 'Accept': 'application/json' };
@@ -240,6 +232,7 @@
                             headers['Content-Type'] = 'application/json;charset=utf-8';
                             const res = await fetch(fullUrl, { method: 'PUT', headers, body: JSON.stringify(diaries.value) });
                             if (res.ok || [201, 204].includes(res.status)) alert("✅ 云端备份成功！");
+                            else alert(`❌ 备份失败: ${res.status}`);
                         } else {
                             const res = await fetch(fullUrl, { method: 'GET', headers });
                             if (res.ok) {
@@ -248,11 +241,12 @@
                                     diaries.value = data.map(d => ({ ...d, isTimelineExpanded: false })); 
                                     saveToLocal(); alert("✅ 同步成功！"); 
                                 }
-                            }
+                            } else alert(`❌ 同步失败: ${res.status}`);
                         }
-                    } catch (err) { alert(`❌ 云端访问失败，可能代理不稳定`); }
+                    } catch (err) { alert(`🚨 代理请求异常: ${err.message}\n请检查代理是否已正确部署。`); }
                 };
 
+                // 图片压缩逻辑保持原样
                 const compressImage = (base64Str) => {
                     return new Promise((resolve) => {
                         const img = new Image();
@@ -279,9 +273,7 @@
 
                 return {
                     handleSync, currentTab, subTab, showModal, diaries, newContent, previewImg, customDate, newMood, newWeather, isSearching, searchQuery, historyDate, calYear, calMonth, selectedDate,
-                    handleImage,
-                    // 新增响应式变量和方法
-                    cloudUser, cloudPass, saveCloudConfig,
+                    handleImage, cloudUser, cloudPass, saveCloudConfig,
                     hasCloudConfigChanged: computed(() => cloudUser.value !== savedCloudUser.value || cloudPass.value !== savedCloudPass.value),
                     filteredDiaries: computed(() => {
                         let list = [...diaries.value];
