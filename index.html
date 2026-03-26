@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <title>大忘日记</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,15 +32,6 @@
         .secure-input:focus { border-color: #000; box-shadow: 0 0 0 2px rgba(0,0,0,0.05); }
     </style>
     <link rel="manifest" href="manifest.json">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('PWA PRO 运行中');
-                }).catch(err => console.log('PWA 注册失败', err));
-            });
-        }
-    </script>
 </head>
 <body>
     <div id="app" v-cloak>
@@ -200,14 +193,16 @@
                 };
 
                 onMounted(() => { 
-                    const s = localStorage.getItem('diary_v2026_final'); 
-                    if (s) diaries.value = JSON.parse(s).map(d => ({ ...d, isTimelineExpanded: false }));
-                    cloudUser.value = savedCloudUser.value = localStorage.getItem('nut_user_0326') || '';
-                    cloudPass.value = savedCloudPass.value = localStorage.getItem('nut_pass_0326') || '';
+                    try {
+                        const s = localStorage.getItem('diary_v2026_final'); 
+                        if (s) diaries.value = JSON.parse(s).map(d => ({ ...d, isTimelineExpanded: false }));
+                        cloudUser.value = savedCloudUser.value = localStorage.getItem('nut_user_0326') || '';
+                        cloudPass.value = savedCloudPass.value = localStorage.getItem('nut_pass_0326') || '';
+                    } catch(e) { console.error("挂载加载失败", e); }
                 });
 
                 const saveCloudConfig = () => {
-                    if (!cloudUser.value || !cloudPass.value) { alert("❌ 请输入完整的邮箱和授权码"); return; }
+                    if (!cloudUser.value || !cloudPass.value) { alert("❌ 请输入邮箱和授权码"); return; }
                     localStorage.setItem('nut_user_0326', cloudUser.value);
                     localStorage.setItem('nut_pass_0326', cloudPass.value);
                     savedCloudUser.value = cloudUser.value;
@@ -215,26 +210,41 @@
                     alert("✅ 凭证已存入本地手机");
                 };
 
+                // 核心加固函数
                 const handleSync = async (mode) => {
-                    const user = localStorage.getItem('nut_user_0326');
-                    const pass = localStorage.getItem('nut_pass_0326');
-                    if (!user || !pass) { alert("⚠️ 请先在【Profile】设置坚果云凭证"); currentTab.value = 2; return; }
-
-                    // --- 专属私人代理配置 ---
-                    const proxyBase = 'https://mydiarprcy.evelynchen1124.workers.dev/?url=';
-                    const targetUrl = 'https://dav.jianguoyun.com/dav/diary/dawang_diary_v2026.json';
-                    const fullUrl = proxyBase + encodeURIComponent(targetUrl);
-                    
-                    const auth = btoa(user + ':' + pass);
                     try {
-                        const headers = { 'Authorization': 'Basic ' + auth, 'Accept': 'application/json' };
+                        const user = localStorage.getItem('nut_user_0326');
+                        const pass = localStorage.getItem('nut_pass_0326');
+                        if (!user || !pass) { alert("⚠️ 请先在【Profile】设置坚果云凭证并点击保存"); currentTab.value = 2; return; }
+
+                        const proxyBase = 'https://mydiarprcy.evelynchen1124.workers.dev/?url=';
+                        const targetUrl = 'https://dav.jianguoyun.com/dav/diary/dawang_diary_v2026.json';
+                        const fullUrl = proxyBase + encodeURIComponent(targetUrl);
+                        
+                        // 兼容性认证生成：btoa 处理包含特殊字符的字符串时可能会报错
+                        let auth;
+                        try {
+                            auth = btoa(user + ':' + pass);
+                        } catch(e) {
+                            alert("❌ 凭证格式错误，请检查是否有特殊字符");
+                            return;
+                        }
+
+                        const headers = { 
+                            'Authorization': 'Basic ' + auth,
+                            'Accept': 'application/json'
+                        };
+
                         if (mode === 'PUT') {
-                            headers['Content-Type'] = 'application/json;charset=utf-8';
-                            const res = await fetch(fullUrl, { method: 'PUT', headers, body: JSON.stringify(diaries.value) });
+                            const res = await fetch(fullUrl, { 
+                                method: 'PUT', 
+                                headers: { ...headers, 'Content-Type': 'application/json;charset=utf-8' }, 
+                                body: JSON.stringify(diaries.value) 
+                            });
                             if (res.ok || [201, 204].includes(res.status)) alert("✅ 云端备份成功！");
                             else alert(`❌ 备份失败: ${res.status}`);
                         } else {
-                            const res = await fetch(fullUrl, { method: 'GET', headers });
+                            const res = await fetch(fullUrl, { method: 'GET', headers: headers });
                             if (res.ok) {
                                 const data = await res.json();
                                 if (confirm(`找到 ${data.length} 条记录，覆盖本地？`)) { 
@@ -243,10 +253,12 @@
                                 }
                             } else alert(`❌ 同步失败: ${res.status}`);
                         }
-                    } catch (err) { alert(`🚨 代理请求异常: ${err.message}\n请检查代理是否已正确部署。`); }
+                    } catch (err) { 
+                        alert(`🚨 发生错误: ${err.name}\n${err.message}`); 
+                        console.error(err);
+                    }
                 };
 
-                // 图片压缩逻辑保持原样
                 const compressImage = (base64Str) => {
                     return new Promise((resolve) => {
                         const img = new Image();
