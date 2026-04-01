@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>我觉得还星</title>
+    <title>大忘日记</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -41,7 +41,7 @@
         <header class="sticky top-0 z-50 bg-[#f8f8f8]/90 backdrop-blur-xl px-4 pt-4 border-b border-gray-100">
             <div class="flex justify-between items-center mb-2 px-2">
                 <div class="w-6"></div>
-                <h1 class="text-[22px] font-black tracking-[0.2em] uppercase text-gray-900">我觉得还星</h1>
+                <h1 class="text-[22px] font-black tracking-[0.2em] uppercase text-gray-900">大忘日记</h1>
                 <div @click="isSearching = !isSearching" class="text-gray-400 p-2 cursor-pointer active:scale-90"><i :class="['fas', isSearching ? 'fa-times' : 'fa-search']"></i></div>
             </div>
             <div v-if="isSearching" class="px-2 pb-3"><input v-model="searchQuery" autofocus class="w-full bg-white border border-gray-100 rounded-full px-5 py-2 text-sm focus:outline-none shadow-inner" placeholder="搜索日记..."></div>
