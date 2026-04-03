@@ -31,10 +31,11 @@
         .secure-input { width: 100%; border: 1px solid #f5f5f5; border-radius: 12px; padding: 8px 12px; font-size: 12px; font-family: monospace; outline: none; transition: 0.2s; background: #fafafa; }
         .secure-input:focus { border-color: #000; background: #fff; }
         .text-custom-blue { color: rgb(84, 174, 255) !important; }
-        /* 放大代理按钮字号 */
         .proxy-btn-text { font-size: 11px !important; }
+        
+        /* 修正：头像位置下移对齐 */
+        .avatar-container { margin-top: 18px; }
     </style>
-    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <div id="app" v-cloak>
@@ -87,7 +88,7 @@
             <section v-if="currentTab === 2" class="space-y-4">
                 <div class="bg-white rounded-[36px] p-7 shadow-sm border border-gray-50 mb-1 relative">
                     <div class="grid grid-cols-[90px_1fr] gap-x-4 gap-y-5">
-                        <div class="flex flex-col items-center">
+                        <div class="flex flex-col justify-center avatar-container">
                             <div @click="$refs.avatarInput.click()" class="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center cursor-pointer overflow-hidden relative shadow-inner border border-gray-100">
                                 <img v-if="userAvatar" :src="userAvatar" class="w-full h-full object-cover">
                                 <i v-else class="fas fa-user text-2xl text-gray-200"></i>
@@ -145,11 +146,11 @@
         <div v-if="showModal" class="fixed inset-0 bg-white z-[300] p-8 flex flex-col pt-16">
             <div class="flex justify-between items-center mb-6">
                 <i @click="showModal = false" class="fas fa-times text-gray-300 p-2 cursor-pointer"></i>
-                <button @click="saveDiary" class="bg-black text-white px-8 py-2 rounded-full font-black text-sm">完成</button>
+                <button @click="saveDiary" class="bg-black text-white px-8 py-2 rounded-full font-black text-sm">SAVE</button>
             </div>
             <div class="flex items-center space-x-3 mb-4">
-                <input type="date" v-model="customDate" class="bg-gray-50 p-3 rounded-2xl font-bold focus:outline-none text-sm text-gray-900">
-                <input v-model="newWeather" class="bg-gray-50 p-3 rounded-2xl text-xs w-24 focus:outline-none font-bold" placeholder="天气">
+                <input type="date" v-model="customDate" class="bg-gray-50 h-11 px-3 rounded-2xl font-bold focus:outline-none text-sm text-gray-900 w-[48%]">
+                <input v-model="newWeather" class="bg-gray-50 h-11 px-3 rounded-2xl text-sm w-[48%] focus:outline-none font-bold" placeholder="天气">
             </div>
             <div class="flex justify-between mb-6 px-2">
                 <span v-for="m in ['😊','🥰','🤔','😭','😡','😴']" @click="newMood = m" :class="['mood-btn', newMood === m ? 'mood-active' : '']">{{ m }}</span>
