@@ -183,11 +183,19 @@
                 const saveToLocal = () => { localStorage.setItem('diary_v2026_final', JSON.stringify(diaries.value)); };
 
                 onMounted(() => { 
-                    const s = localStorage.getItem('diary_v2026_final'); 
-                    if (s) diaries.value = JSON.parse(s).map(d => ({ ...d, isTimelineExpanded: false }));
-                    cloudUser.value = savedCloudUser.value = localStorage.getItem('nut_user_0326') || '';
-                    cloudPass.value = savedCloudPass.value = localStorage.getItem('nut_pass_0326') || '';
-                });
+    const s = localStorage.getItem('diary_v2026_final'); 
+    if (s) {
+        const localData = JSON.parse(s);
+        // 同时初始化时间轴和日历视图的展开状态，确保万无一失
+        diaries.value = localData.map(d => ({
+            ...d,
+            isTimelineExpanded: d.isTimelineExpanded || false,
+            isCalExpanded: d.isCalExpanded || false
+        }));
+    }
+    cloudUser.value = savedCloudUser.value = localStorage.getItem('nut_user_0326') || '';
+    cloudPass.value = savedCloudPass.value = localStorage.getItem('nut_pass_0326') || '';
+});
 
                 const handleAvatar = (e) => {
                     const r = new FileReader();
