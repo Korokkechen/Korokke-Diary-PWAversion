@@ -290,7 +290,33 @@
                     changeMonth: (v) => { let d = new Date(calYear.value, calMonth.value + v, 1); calYear.value = d.getFullYear(); calMonth.value = d.getMonth(); },
                     resetToToday: () => { const n = new Date(); calYear.value = n.getFullYear(); calMonth.value = n.getMonth(); selectedDate.value = n.getDate(); },
                     exportData: () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(diaries.value)], { type: "application/json" })); a.download = `备份.json`; a.click(); },
-                    importData: (e) => { const r = new FileReader(); r.onload = (ev) => { try { diaries.value = JSON.parse(ev.target.result); saveToLocal(); alert("导入成功"); } catch(e) { alert("错误"); } }; r.readAsText(e.target.files[0]); },
+                    importData: (e) => { 
+    const file = e.target.files[0];
+    if (!file) return;
+    const r = new FileReader(); 
+    r.onload = (ev) => { 
+        try { 
+            const imported = JSON.parse(ev.target.result);
+            if (Array.isArray(imported)) {
+                // 核心修复：确保导入的数据包含所有 UI 状态字段，并重置响应式引用
+                diaries.value = imported.map(d => ({
+                    ...d,
+                    isTimelineExpanded: false,
+                    isCalExpanded: false
+                }));
+                saveToLocal(); 
+                alert("✅ 恢复成功"); 
+            } else {
+                alert("❌ 格式错误：非有效的日记备份文件");
+            }
+        } catch(err) { 
+            alert("❌ 导入失败：文件解析错误"); 
+        } finally {
+            e.target.value = ''; // 修复：重置 input 状态，允许连续导入同一个文件
+        }
+    }; 
+    r.readAsText(file); 
+},
                     getDayName: (d) => ['日','一','二','三','四','五','六'][new Date(d).getDay()],
                     getMonthName: (d) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date(d).getMonth()],
                     openNewModal: () => { editingTs.value = null; newContent.value = ''; previewImg.value = ''; newMood.value = '😊'; newWeather.value = '晴'; customDate.value = new Date().toISOString().split('T')[0]; showModal.value = true; },
